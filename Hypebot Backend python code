@@ -1,0 +1,95 @@
+#!/usr/bin/env python3
+"""
+Solana Meme Coin Hype + Rug Risk Bot
+====================================
+A Termux-compatible CLI tool for analyzing Solana tokens.
+Fetches data from DexScreener, Rugcheck, Solana RPC, and X API (Twitter followers).
+
+Requirements:
+- pip install requests python-whois
+
+Usage:
+- Run: python hypebot.py
+- Enter a Solana token address (CA) when prompted.
+- Type 'exit' to quit.
+
+Features:
+- Hype Score (volume, change, liquidity, TXs).
+- Rug Risk Analysis (liquidity, volatility, authorities, holders).
+- Top Holders (from Rugcheck or RPC).
+- Website Age (via whois).
+- X Followers (via API).
+
+X API Key: Set X_API_BEARER_TOKEN env var or hardcode it.
+GitHub: https://github.com/Finn-en/solana-hypebot.
+"""
+
+import requests
+from datetime import datetime
+import base64
+import time
+import re
+from urllib.parse import urlparse
+import os
+
+# X API Bearer Token (set via env or replace)
+X_API_BEARER_TOKEN = os.getenv("X_API_BEARER_TOKEN", "YxpOj6eW5zQMCCbmFIk1zG8HL")
+
+# Note: For website age, install 'pip install python-whois'
+try:
+    import whois
+    WHOIS_AVAILABLE = True
+except ImportError:
+    WHOIS_AVAILABLE = False
+
+# ----------------- Solana RPC Helper -----------------
+def solana_rpc(method, params):
+    url = "https://api.mainnet-beta.solana.com"
+    payload = {"jsonrpc": "2.0", "id": 1, "method": method, "params": params}
+    for attempt in range(3):
+        try:
+            response = requests.post(url, json=payload, timeout=10)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            if "429" in str(e):
+                print(f"RPC rate limit, retrying in {2 ** attempt}s...")
+                time.sleep(2 ** attempt)
+            else:
+                print(f"RPC error: {e}")
+                return {}
+    return {}
+
+# ----------------- Check if Mint Authority is Renounced -----------------
+def is_mint_renounced(token_mint):
+    resp = solana_rpc("getAccountInfo", [token_mint, {"encoding": "base64"}])
+    if "result" not in resp or "value" not in resp["result"] or not resp["result"]["value"]:
+        return False, "Unable to fetch mint info"
+    data_str = resp["result"]["value"]["data"][0]
+    try:
+        decoded = base64.b64decode(data_str)
+        mint_authority_option = decoded[0]
+        return mint_authority_option == 0, None
+    except Exception as e:
+        return False, f"Error decoding mint data: {e}"
+
+# ----------------- Get Token Supply -----------------
+def get_token_supply(token_mint):
+    resp = solana_rpc("getTokenSupply", [token_mint])
+    if "result" in resp and "value" in resp["result"]:
+        return resp["result"]["value"]["uiAmount"]
+    return None
+
+# ----------------- Get Top Holders from Rugcheck or RPC -----------------
+def get_top_holders(ca, supply, rug_data):
+    if not supply:
+        return None
+    # Try Rugcheck first
+    if rug_data and rug_data.get('holders') and supply > 0:
+        holders = rug_data.get('holders', [])
+        sorted_holders = sorted(holders, key=lambda h: h.get('balance', 0), reverse=True)[:10]
+        top_holders_info = []
+        for h in sorted_holders:
+            amount = h.get('balance', 0)
+            pct = (amount / supply) * 100
+            addr = h.get('address
