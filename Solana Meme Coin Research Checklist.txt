@@ -117,9 +117,3 @@ Holderscan/Sonar (community tools) can snapshot holder behavior and rank wallets
 
 
 Risk-Check Tools: Use contract scanners for honeypots (Honeypot.is for multi-chain, or Quill.ai’s Solana scanner).  DexTools-style alert services (or WhaleAlert for big transfers) can notify you of large moves.  Some community-run Telegrams/Discords also post new listings or suspicious activity in real time.
-
-
-In summary, no single factor is decisive; use a combination of on-chain data, tokenomics review, social signals, and trusted tools.  Always keep risk low (many memecoin traders recommend allocating only ~5–10% of one’s portfolio to these).  Proceed quickly but cautiously: in Solana’s memecoin “season,” opportunities arise fast, but so do traps.
-
-Sources: The above strategies are compiled from industry analyses and guides for Solana memecoins, including on-chain heuristics (volume, liquidity, holder distribution), community signals (engagement quality, influencer hype), known scam patterns (honeypots, fake volume) and specialized tools (BirdEye, DexScreener, Solscan, Telegram bots), all prioritized for the Solana ecosystem. Each factor above reflects practices and warnings documented by experts.
-
